@@ -25,9 +25,9 @@ class WeatherEnvClient(BaseEnvClient):
         self.env_server_base = env_server_base
         self.timeout = timeout
         self.data_len = data_len
-        self.id = 0
+        self.task_id = 0
         data = dict()
-        data["id"] = 0
+        data["task_id"] = 0
         ok = requests.post(
             f"{self.env_server_base}/create",
             json=data,
@@ -36,13 +36,13 @@ class WeatherEnvClient(BaseEnvClient):
         if ok.status_code != 200:
             raise RequestException(f"Failed to create environment: {ok}")
 
-        self.env_id = ok.json()
+        self.env_id = ok.json()["env_id"]
 
     def __len__(self):
         return self.data_len
 
     def _post(self, path: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        data["env_idx"] = self.env_id
+        data["env_id"] = self.env_id
         res = requests.post(
             f"{self.env_server_base}/{path}",
             json=data,
@@ -53,7 +53,7 @@ class WeatherEnvClient(BaseEnvClient):
 
     def _get(self, path: str) -> Dict[str, Any]:
         res = requests.get(
-            f"{self.env_server_base}/{path}?env_idx={self.env_id}",
+            f"{self.env_server_base}/{path}?env_id={self.env_id}",
             timeout=self.timeout,
         )
         assert res.status_code == 200
@@ -72,9 +72,9 @@ class WeatherEnvClient(BaseEnvClient):
             done=response["done"],
         )
 
-    def reset(self, id: int) -> Dict[str, Any]:
-        self.id = id
-        response = self._post("reset", {"id": self.id})
+    def reset(self, task_id: int) -> Dict[str, Any]:
+        self.task_id = task_id
+        response = self._post("reset", {"task_id": self.task_id})
         return response
 
 

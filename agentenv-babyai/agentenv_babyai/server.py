@@ -29,27 +29,27 @@ async def create():
 
 @app.post("/step")
 def step(body: StepRequestBody):
-    return server.step(body.id, body.action)
+    return server.step(body.env_id, body.action)
 
 
 @app.post("/reset")
 def reset(body: ResetRequestBody):
-    return server.reset(body.id, body.data_idx)
+    return server.reset(body.env_id, body.task_id)
 
 @app.get("/observation")
-def get_observation(id: int):
-    print(f"Observing environment {id}")
-    return server.observe(id)
+def get_observation(env_id: int):
+    print(f"Observing environment {env_id}")
+    return server.observe(env_id)
 
 @app.post("/close")
 def reset(body: CloseRequestBody):
     print("body", body)
-    return server.close(body.id)
+    return server.close(body.env_id)
 
 @app.post("/render")
 def render_endpoint(body: CloseRequestBody):
     try:
-        result = server.render(body.id)
+        result = server.render(body.env_id)
         return result
     except Exception as e:
         return {"error": str(e)}

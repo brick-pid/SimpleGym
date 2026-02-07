@@ -808,13 +808,13 @@ class SciworldEnvClient(BaseEnvClient):
             self.action_format
         ]
         ok = ok.json()
-        self.env_id = ok["id"]
+        self.env_id = ok["env_id"]
 
     def __len__(self):
         return self.data_len
 
     def _post(self, path: str, data: dict[str, Any]) -> dict[str, Any]:
-        data["id"] = self.env_id
+        data["env_id"] = self.env_id
         res = requests.post(
             f"{self.env_server_base}/{path}",
             json=data,
@@ -825,7 +825,7 @@ class SciworldEnvClient(BaseEnvClient):
 
     def _get(self, path: str) -> dict[str, Any]:
         res = requests.get(
-            f"{self.env_server_base}/{path}?id={self.env_id}",
+            f"{self.env_server_base}/{path}?env_id={self.env_id}",
             timeout=self.timeout,
         )
         assert res.status_code == 200
@@ -857,8 +857,8 @@ class SciworldEnvClient(BaseEnvClient):
             done=response["done"],
         )
 
-    def reset(self, data_idx: int = 0) -> dict[str, Any]:
-        response = self._post("reset", {"data_idx": data_idx})
+    def reset(self, task_id: int = 0) -> dict[str, Any]:
+        response = self._post("reset", {"task_id": task_id})
         self.info = {
             "observation": response["task_description"] + '\n' + response["observation"],
             "reward": 0,

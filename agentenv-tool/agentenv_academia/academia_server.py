@@ -25,27 +25,27 @@ def list_envs():
     return list(academia_env_server.env.keys())
 
 
-@app.post("/create", response_model=int)
+@app.post("/create")
 def create(create_query: CreateQuery):
     """Create a new environment"""
-    env = academia_env_server.create(create_query.id)
-    return env
+    env = academia_env_server.create(create_query.task_id)
+    return {"env_id": env}
 
 
 @app.post("/step", response_model=StepResponse)
 def step(step_query: StepQuery):
     observation, reward, done, _ = academia_env_server.step(
-        step_query.env_idx, step_query.action
+        step_query.env_id, step_query.action
     )
     return StepResponse(observation=observation, reward=reward, done=done)
 
 
 @app.get("/observation", response_model=str)
-def observation(env_idx: int):
-    return academia_env_server.observation(env_idx)
+def observation(env_id: int):
+    return academia_env_server.observation(env_id)
 
 
 @app.post("/reset", response_model=str)
 def reset(reset_query: ResetQuery):
-    academia_env_server.reset(reset_query.env_idx, reset_query.id)
-    return academia_env_server.observation(reset_query.env_idx)
+    academia_env_server.reset(reset_query.env_id, reset_query.task_id)
+    return academia_env_server.observation(reset_query.env_id)

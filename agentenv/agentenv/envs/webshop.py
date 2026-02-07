@@ -167,13 +167,13 @@ class WebshopEnvClient(BaseEnvClient):
         self.conversation_start = self.adapter_cls.conversation_start_dict[
             self.action_format
         ]
-        self.env_id = ok.json()
+        self.env_id = ok.json()["env_id"]
 
     def __len__(self):
         return self.data_len
 
     def _post(self, path: str, data: dict[str, Any]) -> dict[str, Any]:
-        data["env_idx"] = self.env_id
+        data["env_id"] = self.env_id
         max_retries = 5
         for attempt in range(max_retries):
             res = requests.post(
@@ -196,7 +196,7 @@ class WebshopEnvClient(BaseEnvClient):
 
     def _get(self, path: str) -> dict[str, Any]:
         res = requests.get(
-            f"{self.env_server_base}/{path}?env_idx={self.env_id}",
+            f"{self.env_server_base}/{path}?env_id={self.env_id}",
             timeout=self.timeout,
         )
         assert res.status_code == 200
@@ -224,8 +224,8 @@ class WebshopEnvClient(BaseEnvClient):
             done=response["done"],
         )
 
-    def reset(self, idx: int) -> dict[str, Any]:
-        response = self._post("reset", {"session_id": idx})
+    def reset(self, task_id: int) -> dict[str, Any]:
+        response = self._post("reset", {"task_id": task_id})
         response[0] = self.observe()
         return response
 

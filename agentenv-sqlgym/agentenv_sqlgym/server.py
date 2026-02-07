@@ -40,36 +40,37 @@ async def list_envs():
     return list(sqlgym_env_server.env.keys())
 
 
-@app.post("/create", response_model=int)
+@app.post("/create")
 async def create():
     """Create a new environment"""
     env = sqlgym_env_server.create()
 
-    return env
+    return {"env_id": env}
 
 
 @app.post("/step", response_model=StepResponse)
 async def step(step_query: StepQuery):
     print("/step")
-    print(step_query.env_idx)
+    env_id = step_query.env_id
+    print(env_id)
     print(step_query.action)
     state, reward, done, info = sqlgym_env_server.step(
-        step_query.env_idx, step_query.action
+        env_id, step_query.action
     )
-    print(step_query.env_idx)
+    print(env_id)
     print(state)
     return StepResponse(state=state, reward=reward, done=done, info=info)
 
 
 @app.get("/observation", response_model=str)
-async def observation(env_idx: int):
+async def observation(env_id: int):
     print("/observation")
-    print(env_idx)
-    res = sqlgym_env_server.observation(env_idx)
+    print(env_id)
+    res = sqlgym_env_server.observation(env_id)
     return res
 
 
 @app.post("/reset", response_model=Tuple[str, None])
 async def reset(reset_query: ResetQuery):
     print(reset_query)
-    return sqlgym_env_server.reset(reset_query.env_idx, reset_query.item_id), None
+    return sqlgym_env_server.reset(reset_query.env_id, reset_query.task_id), None

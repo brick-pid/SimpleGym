@@ -38,32 +38,33 @@ def generate_ok():
     """Test connectivity"""
     return "ok"
 
-@app.post("/create", response_model=int)
+@app.post("/create")
 def create(create_query: CreateQuery):
     """Create a new environment"""
-    env = searchqa_env_server.create(create_query.id)
-    return env
+    env = searchqa_env_server.create(create_query.task_id)
+    return {"env_id": env}
 
 @app.post("/step", response_model=StepResponse)
 def step(step_query: StepQuery):
     # print(f"Step query: {step_query.action}")
     observation, reward, done, info = searchqa_env_server.step(
-        step_query.env_idx, step_query.action
+        step_query.env_id, step_query.action
     )
     # print(f"Observation: {observation}")
     return StepResponse(observation=observation, reward=reward, done=done,info=info)
 
 @app.get("/observation", response_model=str)
-def observation(env_idx: int):
-    return searchqa_env_server.observation(env_idx)
+def observation(env_id: int):
+    return searchqa_env_server.observation(env_id)
 
 @app.post("/reset", response_model=str)
 def reset(reset_query: ResetQuery):
-    searchqa_env_server.reset(reset_query.env_idx, reset_query.id)
-    return searchqa_env_server.observation(reset_query.env_idx)
+    env_id = reset_query.env_id
+    searchqa_env_server.reset(env_id, reset_query.task_id)
+    return searchqa_env_server.observation(env_id)
 
 
 @app.post("/close")
 def close(body: CloseRequestBody):
-    # print(f"/close {body.env_idx}")
-    return searchqa_env_server.close(body.env_idx)
+    # print(f"/close {body.env_id}")
+    return searchqa_env_server.close(body.env_id)

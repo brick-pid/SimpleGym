@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class StepQuery(BaseModel):
-    env_idx: int
+    env_id: int
     action: str
 
 
@@ -16,5 +16,5 @@ class StepResponse(BaseModel):
 
 
 class ResetQuery(BaseModel):
-    env_idx: int
-    item_id: int
+    env_id: int
+    task_id: int

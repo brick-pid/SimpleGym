@@ -2,10 +2,10 @@ from pydantic import BaseModel
 
 
 class WordleStepRequestBody(BaseModel):
-    id: int
+    env_id: int
     action: str
 
 
 class WordleResetRequestBody(BaseModel):
-    id: int
-    seed: int
+    env_id: int
+    task_id: int

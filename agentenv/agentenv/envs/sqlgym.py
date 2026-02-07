@@ -34,13 +34,13 @@ class SqlGymEnvClient(BaseEnvClient):
         if ok.status_code != 200:
             raise RequestException(f"Failed to create environment: {ok}")
 
-        self.env_id = ok.json()
+        self.env_id = ok.json()["env_id"]
 
     def __len__(self):
         return self.data_len
 
     def _post(self, path: str, data: dict[str, Any]) -> dict[str, Any]:
-        data["env_idx"] = self.env_id
+        data["env_id"] = self.env_id
         max_retries = 5
         for _ in range(max_retries):
             res = requests.post(
@@ -63,7 +63,7 @@ class SqlGymEnvClient(BaseEnvClient):
 
     def _get(self, path: str) -> dict[str, Any]:
         res = requests.get(
-            f"{self.env_server_base}/{path}?env_idx={self.env_id}",
+            f"{self.env_server_base}/{path}?env_id={self.env_id}",
             timeout=self.timeout,
         )
         assert res.status_code == 200
@@ -82,8 +82,8 @@ class SqlGymEnvClient(BaseEnvClient):
         response = self._get("observation")
         return response
 
-    def reset(self, idx: int) -> dict[str, Any]:
-        response = self._post("reset", {"item_id": idx})
+    def reset(self, task_id: int) -> dict[str, Any]:
+        response = self._post("reset", {"task_id": task_id})
         return response
 
 

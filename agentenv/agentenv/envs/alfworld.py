@@ -538,14 +538,14 @@ class AlfWorldEnvClient(BaseEnvClient):
         
         ok = ok.json()
         # print(ok)
-        self.env_id = ok["id"]
+        self.env_id = ok["env_id"]
         self.info = None
 
     def __len__(self):
         return self.data_len
 
     def _post(self, path: str, data: dict[str, Any]) -> dict[str, Any]:
-        data["id"] = self.env_id
+        data["env_id"] = self.env_id
         res = requests.post(
             f"{self.env_server_base}/{path}",
             json=data,
@@ -556,7 +556,7 @@ class AlfWorldEnvClient(BaseEnvClient):
 
     def _get(self, path: str) -> dict[str, Any]:
         res = requests.get(
-            f"{self.env_server_base}/{path}?id={self.env_id}",
+            f"{self.env_server_base}/{path}?env_id={self.env_id}",
             timeout=self.timeout,
         )
         assert res.status_code == 200
@@ -590,8 +590,8 @@ class AlfWorldEnvClient(BaseEnvClient):
             done=response["done"],
         )
 
-    def reset(self, game: int, world_type: str = "Text") -> dict[str, Any]:
-        response = self._post("reset", {"game": game, "world_type": world_type})
+    def reset(self, task_id: int, world_type: str = "Text") -> dict[str, Any]:
+        response = self._post("reset", {"task_id": task_id, "world_type": world_type})
         self.info = {
             "observation": response["observation"],
             "available_actions": response["available_actions"],

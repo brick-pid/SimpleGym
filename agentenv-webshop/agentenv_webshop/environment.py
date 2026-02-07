@@ -92,8 +92,8 @@ class WebshopEnvServer:
         """
         return self.env[env_idx].state
 
-    def reset(self, env_idx, session_id: Optional[int]):
-        return self.env[env_idx].reset(session=session_id)
+    def reset(self, env_idx, task_id: Optional[int]):
+        return self.env[env_idx].reset(session=task_id)
     
     def __del__(self):
         for idx in self.ls:

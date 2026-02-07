@@ -40,30 +40,30 @@ async def list_envs():
     return list(webshop_env_server.env.keys())
 
 
-@app.post("/create", response_model=int)
+@app.post("/create")
 async def create():
     """Create a new environment"""
     env = webshop_env_server.create()
 
-    return env
+    return {"env_id": env}
 
 
 @app.post("/step", response_model=StepResponse)
 def step(step_query: StepQuery):
     print("/step")
-    print(step_query.env_idx)
+    print(step_query.env_id)
     print(step_query.action)
     state, reward, done, info = webshop_env_server.step(
-        step_query.env_idx, step_query.action
+        step_query.env_id, step_query.action
     )
-    print(step_query.env_idx)
+    print(step_query.env_id)
     print(state)
     return StepResponse(state=state, reward=reward, done=done, info=info)
 
 
 @app.get("/available_actions", response_model=AvailableActionsResponse)
-def get_available_actions(env_idx: int):
-    res = webshop_env_server.get_available_actions(env_idx)
+def get_available_actions(env_id: int):
+    res = webshop_env_server.get_available_actions(env_id)
     has_search_bar = res["has_search_bar"]
     clickables = res["clickables"]
     return AvailableActionsResponse(
@@ -72,27 +72,27 @@ def get_available_actions(env_idx: int):
 
 
 @app.get("/instruction_text", response_model=str)
-def get_instruction_text(env_idx: int):
+def get_instruction_text(env_id: int):
     print("/instruction_text")
-    print(env_idx)
-    res = webshop_env_server.get_instruction_text(env_idx)
+    print(env_id)
+    res = webshop_env_server.get_instruction_text(env_id)
     print(res)
     return res
 
 
 @app.get("/observation", response_model=str)
-def observation(env_idx: int):
+def observation(env_id: int):
     print("/observation")
-    print(env_idx)
-    res = webshop_env_server.observation(env_idx)
+    print(env_id)
+    res = webshop_env_server.observation(env_id)
     return res
 
 
 @app.get("/state", response_model=StateResponse)
-def get_state(env_idx: int):
+def get_state(env_id: int):
     print("/state")
-    url, html, instruction_text = webshop_env_server.state(env_idx)
-    print(env_idx)
+    url, html, instruction_text = webshop_env_server.state(env_id)
+    print(env_id)
     print(instruction_text)
     return StateResponse(url=url, html=html, instruction_text=instruction_text)
 
@@ -100,4 +100,4 @@ def get_state(env_idx: int):
 @app.post("/reset", response_model=Tuple[str, None])
 def reset(reset_query: ResetQuery):
     print(reset_query)
-    return webshop_env_server.reset(reset_query.env_idx, reset_query.session_id)
+    return webshop_env_server.reset(reset_query.env_id, reset_query.task_id)

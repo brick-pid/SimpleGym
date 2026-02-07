@@ -24,12 +24,12 @@ async def maze_create():
 
 @app.post("/maze/step")
 def maze_step(body: MazeStepRequestBody):
-    return maze_server.step(body.id, body.action)
+    return maze_server.step(body.env_id, body.action)
 
 
 @app.post("/maze/reset")
 def maze_reset(body: MazeResetRequestBody):
-    return maze_server.reset(body.id, body.game)
+    return maze_server.reset(body.env_id, body.task_id)
 
 
 @app.get("/maze/available_actions")
@@ -38,13 +38,13 @@ def maze_get_available_actions():
 
 
 @app.get("/maze/observation")
-def maze_get_observation(id: int):
-    return maze_server.get_observation(id)
+def maze_get_observation(env_id: int):
+    return maze_server.get_observation(env_id)
 
 
 @app.get("/maze/detail")
-def maze_get_detailed_info(id: int):
-    return maze_server.get_detailed_info(id)
+def maze_get_detailed_info(env_id: int):
+    return maze_server.get_detailed_info(env_id)
 
 
 # ----------------------------------------
@@ -59,24 +59,24 @@ async def wordle_create():
 
 @app.post("/wordle/step")
 def wordle_step(body: WordleStepRequestBody):
-    return wordle_server.step(body.id, body.action)
+    return wordle_server.step(body.env_id, body.action)
 
 
 @app.post("/wordle/reset")
 def wordle_reset(body: WordleResetRequestBody):
-    return wordle_server.reset(body.id, body.seed)
+    return wordle_server.reset(body.env_id, body.task_id)
 
 
 @app.get("/wordle/filtered_vocab")
-def wordle_get_filtered_vocab(id: int):
-    return wordle_server.get_filtered_vocab(id)
+def wordle_get_filtered_vocab(env_id: int):
+    return wordle_server.get_filtered_vocab(env_id)
 
 
 @app.get("/wordle/observation")
-def wordle_get_observation(id: int):
-    return wordle_server.get_observation(id)
+def wordle_get_observation(env_id: int):
+    return wordle_server.get_observation(env_id)
 
 
 @app.get("/wordle/detail")
-def wordle_get_detailed_info(id: int):
-    return wordle_server.get_detailed_info(id)
+def wordle_get_detailed_info(env_id: int):
+    return wordle_server.get_detailed_info(env_id)

@@ -16,7 +16,7 @@ class Lmrlgym_MazeEnv:
             self._max_id += 1
         try:
             payload = {
-                "id": idx,
+                "env_id": idx,
             }
             self.info[idx] = {
                 "done": False,

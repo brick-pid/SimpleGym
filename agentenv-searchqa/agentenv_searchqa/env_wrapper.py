@@ -110,13 +110,13 @@ class SearchQAEnvServer:
             "train": train_dataset,
         }
 
-    def create(self, item_id: int = 0) -> int:
+    def create(self, task_id: int = 0) -> int:
         with self._lock:
             env_idx = self._max_id
             self._max_id += 1
 
         self.env[env_idx] = self._fetch_data(
-            item_id
+            task_id
         )  # redundancy fetch to prevent NoneType Error
         self.ls.append(env_idx)
 
@@ -190,9 +190,9 @@ class SearchQAEnvServer:
         user_prompt = f"""You must reason inside <think>...</think> first. If you do not have enough knowledge, issue a <search>...</search> and then STOP. Do not generate <information> or <answer> yet. Wait for external input wrapped in <information>...</information>. After receiving information, reason again in <think>. If confident, output your final answer in <answer>...</answer>. Do not output <answer> before receiving <information> unless you are fully confident. If you find no further external knowledge needed, you can directly provide the answer inside <answer> and </answer>, without detailed illustrations. For example, <answer> Beijing </answer>. Follow this process every time.\n\n Question: {question.strip()}"""
         return user_prompt
 
-    def reset(self, env_idx, item_id: Optional[int] = None):
+    def reset(self, env_idx, task_id: Optional[int] = None):
         self._check_env_idx(env_idx)
-        self.env[env_idx] = self._fetch_data(item_id)
+        self.env[env_idx] = self._fetch_data(task_id)
 
     def _search(self, search_query: str):
         results, scores = self.retriever.search(
@@ -225,18 +225,18 @@ class SearchQAEnvServer:
         if self.env[env_idx] is None:
             raise NotInitializedError(f"Env {env_idx} not initialized")
 
-    def _fetch_data(self, item_id: int):
+    def _fetch_data(self, task_id: int):
         """
-        Fetch data from the dataset based on the item_id.
+        Fetch data from the dataset based on the task_id.
         """
         _id = None
         for mode, r in ITEM_RANGE.items():
-            if r[0] <= item_id < r[1]:
-                _id = item_id - r[0]
+            if r[0] <= task_id < r[1]:
+                _id = task_id - r[0]
 
                 return self.dataset[mode][_id]
         if _id is None:
-            raise ValueError(f"Item id {item_id} is out of range.")
+            raise ValueError(f"Task id {task_id} is out of range.")
         
     def __del__(self):
         for idx in self.ls:

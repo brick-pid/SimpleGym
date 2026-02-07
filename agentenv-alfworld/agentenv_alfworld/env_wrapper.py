@@ -81,7 +81,7 @@ class ALFWorld_Wrapper:
             self.info[idx] = {"done": False, "reward": 0, "deleted": False}
             print(f"-------Env {idx} created--------")
             self.ls.append(idx)
-            payload = {"id": idx}
+            payload = {"env_id": idx}
         except Exception as e:
             payload = {"error": f"{e}"}
         return payload
@@ -121,7 +121,7 @@ class ALFWorld_Wrapper:
             ob = "\n".join(ob[0].split("\n\n")[1:])
             available_actions = info.get("admissible_commands", [[]])[0]
             payload = {
-                "id": idx,
+                "env_id": idx,
                 "observation": ob,
                 "available_actions": available_actions,
                 "task_type": "/".join(info["extra.gamefile"][0].split("/")[-3:-1]),

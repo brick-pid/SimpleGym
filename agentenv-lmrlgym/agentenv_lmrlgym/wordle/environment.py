@@ -31,7 +31,7 @@ class Lmrlgym_WordleEnv:
             # vocab = Vocabulary.from_file(os.path.join(vocab_base, f"{vocab_file}.txt"))
             vocab = Vocabulary.from_file(os.path.join(vocab_base, "tweet_words.txt"))
             new_env = ReformatWordleEnvironment(WordleEnvironment(vocab))
-            payload = {"id": idx}
+            payload = {"env_id": idx}
             self.env[idx] = new_env
             self.info[idx] = {"done": False, "reward": 0, "deleted": False}
             print(f"-------Env {idx} created--------")
@@ -70,7 +70,7 @@ class Lmrlgym_WordleEnv:
             self._check_id(idx, True)
             self.env[idx].reset(seed)
             ob = "Let's start Wordle!"
-            payload = {"id": idx, "observation": ob}
+            payload = {"env_id": idx, "observation": ob}
             self.info[idx].update(
                 {
                     "seed": seed,

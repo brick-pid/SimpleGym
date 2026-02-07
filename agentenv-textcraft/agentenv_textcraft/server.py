@@ -29,37 +29,41 @@ async def create(body: CreateRequestBody):
 
 @app.post("/step")
 def step(body: StepRequestBody):
-    print(f"/step {body.id} {body.action}")
-    return server.step(body.id, body.action)
+    env_id = body.env_id
+    print(f"/step {env_id} {body.action}")
+    return server.step(env_id, body.action)
 
 
 @app.post("/reset")
 def reset(body: ResetRequestBody):
-    print(f"/reset {body.id} {body.data_idx}")
-    return server.reset(body.id, body.data_idx)
+    env_id = body.env_id
+    task_id = body.task_id
+    print(f"/reset {env_id} {task_id}")
+    return server.reset(env_id, task_id)
 
 
 @app.get("/observation")
-def get_observation(id: int):
-    print(f"/observation {id}")
-    return server.get_observation(id)
+def get_observation(env_id: int):
+    print(f"/observation {env_id}")
+    return server.get_observation(env_id)
 
 
 @app.get("/commands")
-def get_commands(id: int):
-    return server.get_commands(id)
+def get_commands(env_id: int):
+    return server.get_commands(env_id)
 
 
 @app.get("/goal")
-def get_goal(id: int):
-    return server.get_goal(id)
+def get_goal(env_id: int):
+    return server.get_goal(env_id)
 
 
 @app.get("/detail")
-def get_detailed_info(id: int):
-    return server.get_detailed_info(id)
+def get_detailed_info(env_id: int):
+    return server.get_detailed_info(env_id)
 
 @app.post("/close")
 def close(body: CloseRequestBody):
-    print(f"/close {body.id}")
-    return server.close(body.id)
+    env_id = body.env_id
+    print(f"/close {env_id}")
+    return server.close(env_id)

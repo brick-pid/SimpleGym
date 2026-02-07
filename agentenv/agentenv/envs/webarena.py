@@ -34,13 +34,13 @@ class WebarenaEnvClient(BaseEnvClient):
         if ok.status_code != 200:
             raise RequestException(f"Failed to create environment: {ok}")
 
-        self.env_id = ok.json()["env_idx"]
+        self.env_id = ok.json()["env_id"]
 
     def __len__(self):
         return self.data_len
 
     def _post(self, path: str, data: Dict[str, Any]) -> Dict[str, Any]:
-        data["env_idx"] = self.env_id
+        data["env_id"] = self.env_id
         res = requests.post(
             f"{self.env_server_base}/{path}",
             json=data,
@@ -51,7 +51,7 @@ class WebarenaEnvClient(BaseEnvClient):
 
     def _get(self, path: str) -> Dict[str, Any]:
         res = requests.get(
-            f"{self.env_server_base}/{path}?env_idx={self.env_id}",
+            f"{self.env_server_base}/{path}?env_id={self.env_id}",
             timeout=self.timeout,
         )
         assert res.status_code == 200
@@ -87,10 +87,12 @@ class WebarenaEnvClient(BaseEnvClient):
             # action=action,
         )
 
-    def reset(self, idx: int) -> Dict[str, Any]:
-        response = self._post("reset", {"seed": 0, "idx": idx})
+    def reset(self, task_id: int) -> Dict[str, Any]:
+        response = self._post("reset", {"seed": 0, "task_id": task_id})
         if response["observation"] == "TimeoutError":
-            raise TimeoutError(f"WebArena Reset Timeout: item id={idx}, you may consider restarting the web server.")
+            raise TimeoutError(
+                f"WebArena Reset Timeout: task_id={task_id}, you may consider restarting the web server."
+            )
         return response
 
     def close(self):

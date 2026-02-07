@@ -21,33 +21,33 @@ class WeatherEnvServer:
         self.dataset = ToolDataset(test_file=dataset_path)
         self._lock = threading.Lock()
 
-    def create(self, id: int = 0) -> int:
+    def create(self, task_id: int = 0) -> int:
         with self._lock:
             env_idx = self._max_id
             self._max_id += 1
         dataset = self.dataset
         dataset_i = dict()
-        dataset_i["goal"] = dataset.goals[id]
-        dataset_i["ground_truth"] = dataset.ground_truths[id]
-        dataset_i["ground_truth_subgoals"] = dataset.ground_truth_subgoals[id]
-        dataset_i["tool"] = dataset.tools[id]
-        dataset_i["current_date"] = dataset.init_configs[id]["current_date"]
-        dataset_i["current_location"] = dataset.init_configs[id]["current_location"]
+        dataset_i["goal"] = dataset.goals[task_id]
+        dataset_i["ground_truth"] = dataset.ground_truths[task_id]
+        dataset_i["ground_truth_subgoals"] = dataset.ground_truth_subgoals[task_id]
+        dataset_i["tool"] = dataset.tools[task_id]
+        dataset_i["current_date"] = dataset.init_configs[task_id]["current_date"]
+        dataset_i["current_location"] = dataset.init_configs[task_id]["current_location"]
 
         self.env[env_idx] = WeatherEnv(dataset=dataset_i)
         return env_idx
 
-    def reset(self, env_idx, id: Optional[int] = None):
-        if id is not None:
-            print(id)
+    def reset(self, env_idx, task_id: Optional[int] = None):
+        if task_id is not None:
+            print(task_id)
             dataset = self.dataset
             dataset_i = dict()
-            dataset_i["goal"] = dataset.goals[id]
-            dataset_i["ground_truth"] = dataset.ground_truths[id]
-            dataset_i["ground_truth_subgoals"] = dataset.ground_truth_subgoals[id]
-            dataset_i["tool"] = dataset.tools[id]
-            dataset_i["current_date"] = dataset.init_configs[id]["current_date"]
-            dataset_i["current_location"] = dataset.init_configs[id]["current_location"]
+            dataset_i["goal"] = dataset.goals[task_id]
+            dataset_i["ground_truth"] = dataset.ground_truths[task_id]
+            dataset_i["ground_truth_subgoals"] = dataset.ground_truth_subgoals[task_id]
+            dataset_i["tool"] = dataset.tools[task_id]
+            dataset_i["current_date"] = dataset.init_configs[task_id]["current_date"]
+            dataset_i["current_location"] = dataset.init_configs[task_id]["current_location"]
 
             self.env[env_idx].__init__(dataset=dataset_i)
         else:

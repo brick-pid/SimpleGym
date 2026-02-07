@@ -3,11 +3,11 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 class CreateQuery(BaseModel):
-    id: int
+    task_id: int = 0
 
 
 class StepQuery(BaseModel):
-    env_idx: int
+    env_id: int
     action: str
 
 
@@ -19,8 +19,8 @@ class StepResponse(BaseModel):
 
 
 class ResetQuery(BaseModel):
-    env_idx: int
-    id: Optional[int] = None
+    env_id: int
+    task_id: int = 0
 
 
 class Task(BaseModel):
@@ -33,4 +33,4 @@ class QueryRequest(BaseModel):
     return_scores: bool = False
     
 class CloseRequestBody(BaseModel):
-    env_idx: int
+    env_id: int

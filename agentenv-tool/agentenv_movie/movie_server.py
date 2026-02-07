@@ -25,27 +25,27 @@ def list_envs():
     return list(movie_env_server.env.keys())
 
 
-@app.post("/create", response_model=int)
+@app.post("/create")
 def create(create_query: CreateQuery):
     """Create a new environment"""
-    env = movie_env_server.create(create_query.id)
-    return env
+    env = movie_env_server.create(create_query.task_id)
+    return {"env_id": env}
 
 
 @app.post("/step", response_model=StepResponse)
 def step(step_query: StepQuery):
     observation, reward, done, _ = movie_env_server.step(
-        step_query.env_idx, step_query.action
+        step_query.env_id, step_query.action
     )
     return StepResponse(observation=observation, reward=reward, done=done)
 
 
 @app.get("/observation", response_model=str)
-def observation(env_idx: int):
-    return movie_env_server.observation(env_idx)
+def observation(env_id: int):
+    return movie_env_server.observation(env_id)
 
 
 @app.post("/reset", response_model=str)
 def reset(reset_query: ResetQuery):
-    movie_env_server.reset(reset_query.env_idx, reset_query.id)
-    return movie_env_server.observation(reset_query.env_idx)
+    movie_env_server.reset(reset_query.env_id, reset_query.task_id)
+    return movie_env_server.observation(reset_query.env_id)

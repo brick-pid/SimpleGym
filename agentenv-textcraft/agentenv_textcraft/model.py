@@ -8,13 +8,13 @@ class CreateRequestBody(BaseModel):
 
 
 class StepRequestBody(BaseModel):
-    id: int
+    env_id: int
     action: str
 
 
 class ResetRequestBody(BaseModel):
-    id: int
-    data_idx: Optional[int] = 0
+    env_id: int
+    task_id: Optional[int] = 0
 
 class CloseRequestBody(BaseModel):
-    id: int
+    env_id: int

@@ -34,7 +34,7 @@ class SciWorldEnv:
 
             self.ls.append(idx)
             print(f"-------Env {idx} created--------")
-            return {"id": idx}
+            return {"env_id": idx}
         except Exception as e:
             return {"error": str(e)}
 

@@ -40,10 +40,10 @@ async def create():
     """Create a new environment"""
     global _max_id
     async with _max_id_lock:
-        env_idx = _max_id
+        env_id = _max_id
         _max_id += 1
-    env = await asyncio.to_thread(webarena_env_server.create, env_idx)
-    return jsonify({"env_idx": env})
+    env = await asyncio.to_thread(webarena_env_server.create, env_id)
+    return jsonify({"env_id": env})
 
 @app.route("/step", methods=["POST"])
 async def step():
@@ -52,7 +52,7 @@ async def step():
     """
     step_query = await request.get_json()
     step_data = await asyncio.to_thread(
-        webarena_env_server.step, step_query["env_idx"], step_query["action"]
+        webarena_env_server.step, step_query["env_id"], step_query["action"]
     )
     step_response = {
         "observation": step_data[0],
@@ -68,8 +68,8 @@ async def get_observation():
     """
     current observation
     """
-    env_idx = request.args.get("env_idx", type=int)
-    obs = await asyncio.to_thread(webarena_env_server.observation, env_idx)
+    env_id = request.args.get("env_id", type=int)
+    obs = await asyncio.to_thread(webarena_env_server.observation, env_id)
     return jsonify(obs)
 
 @app.route("/observation_metadata", methods=["GET"])
@@ -77,8 +77,8 @@ async def get_obsmetadata():
     """
     current observation metadata
     """
-    env_idx = request.args.get("env_idx", type=int)
-    obs_meta = await asyncio.to_thread(webarena_env_server.observation_metadata, env_idx)
+    env_id = request.args.get("env_id", type=int)
+    obs_meta = await asyncio.to_thread(webarena_env_server.observation_metadata, env_id)
     return jsonify(obs_meta)
 
 def check_cookies_expiration():
@@ -123,7 +123,7 @@ async def reset():
     """
     reset_query = await request.get_json()
     reset_query["options"] = {
-        "config_file": f"./config_files/{reset_query['idx']}.json"
+        "config_file": f"./config_files/{reset_query['task_id']}.json"
     }
     try:
         if check_cookies_expiration():
@@ -134,7 +134,7 @@ async def reset():
             
         obs, info, sites,object = await asyncio.to_thread(
             webarena_env_server.reset,
-            reset_query["env_idx"], reset_query["seed"], reset_query["options"]
+            reset_query["env_id"], reset_query["seed"], reset_query["options"]
         )
     except Exception as e:
         print(e)
@@ -149,25 +149,25 @@ async def close():
     close_query = await request.get_json()
     try:
         await asyncio.wait_for(
-            asyncio.to_thread(webarena_env_server.close, close_query["env_idx"]),
+            asyncio.to_thread(webarena_env_server.close, close_query["env_id"]),
             timeout=30.0
         )
         close_response = {"closed":"closed"}
     except asyncio.TimeoutError:
-        print(f"Close Env {close_query['env_idx']} time out.")
-        close_response = {"closed":f"Close Env {close_query['env_idx']} time out."}
+        print(f"Close Env {close_query['env_id']} time out.")
+        close_response = {"closed":f"Close Env {close_query['env_id']} time out."}
     except Exception as e:
-        close_response = {"closed":f"Close Env {close_query['env_idx']} Error: {e}"}
+        close_response = {"closed":f"Close Env {close_query['env_id']} Error: {e}"}
     return jsonify(close_response)
 
 def handle_exit(signum, frame):
     print("\n[INFO] Shutting down server gracefully...")
-    for env_idx in list(webarena_env_server.envs.keys()):
-        print(f"Closing environment {env_idx}...")
+    for env_id in list(webarena_env_server.envs.keys()):
+        print(f"Closing environment {env_id}...")
         try:
-            webarena_env_server.close(env_idx)
+            webarena_env_server.close(env_id)
         except Exception as e:
-            print(f"Error closing environment {env_idx}: {e}")
+            print(f"Error closing environment {env_id}: {e}")
     try:
         auth_dir = "./.auth"
         print(f"[INFO] Cleaning up {auth_dir} folder...")

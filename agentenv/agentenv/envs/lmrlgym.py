@@ -131,7 +131,7 @@ Now let's start a new game. Return your action and your thought in the format ab
 
         ok = ok.json()
         print(ok)
-        self.env_id = ok["id"]
+        self.env_id = ok["env_id"]
         self.info = {
             "reward": 0,
             "done": False,
@@ -141,7 +141,7 @@ Now let's start a new game. Return your action and your thought in the format ab
         return self.data_len
 
     def _post(self, path: str, data: dict[str, Any]) -> dict[str, Any]:
-        data["id"] = self.env_id
+        data["env_id"] = self.env_id
         res = requests.post(
             f"{self.env_server_base}/{path}",
             json=data,
@@ -152,7 +152,7 @@ Now let's start a new game. Return your action and your thought in the format ab
 
     def _get(self, path: str) -> dict[str, Any]:
         res = requests.get(
-            f"{self.env_server_base}/{path}?id={self.env_id}",
+            f"{self.env_server_base}/{path}?env_id={self.env_id}",
             timeout=self.timeout,
         )
         assert res.status_code == 200
@@ -186,8 +186,8 @@ Now let's start a new game. Return your action and your thought in the format ab
             done=response["done"],
         )
 
-    def reset(self, idx: int = 0) -> dict[str, Any]:
-        response = self._post("reset", {"game": idx})
+    def reset(self, task_id: int = 0) -> dict[str, Any]:
+        response = self._post("reset", {"task_id": task_id})
         print(response)
         self.first_observation = self._fully_first_observation
         response["observation"] = (
@@ -282,7 +282,7 @@ Now let's start a new game. Remember, the word you guess should be strictly in t
 
         ok = ok.json()
         print(ok)
-        self.env_id = ok["id"]
+        self.env_id = ok["env_id"]
         vocab = self._get("filtered_vocab")
         self.info = {
             "observation": self.first_observation.replace(
@@ -298,7 +298,7 @@ Now let's start a new game. Remember, the word you guess should be strictly in t
         return self.data_len
 
     def _post(self, path: str, data: dict[str, Any]) -> dict[str, Any]:
-        data["id"] = self.env_id
+        data["env_id"] = self.env_id
         res = requests.post(
             f"{self.env_server_base}/{path}",
             json=data,
@@ -309,7 +309,7 @@ Now let's start a new game. Remember, the word you guess should be strictly in t
 
     def _get(self, path: str) -> dict[str, Any]:
         res = requests.get(
-            f"{self.env_server_base}/{path}?id={self.env_id}",
+            f"{self.env_server_base}/{path}?env_id={self.env_id}",
             timeout=self.timeout,
         )
         assert res.status_code == 200
@@ -343,8 +343,8 @@ Now let's start a new game. Remember, the word you guess should be strictly in t
             done=response["done"],
         )
 
-    def reset(self, idx: int = 0) -> dict[str, Any]:
-        response = self._post("reset", {"seed": idx})
+    def reset(self, task_id: int = 0) -> dict[str, Any]:
+        response = self._post("reset", {"task_id": task_id})
         self.info.update(
             {
                 "observation": self.first_observation.replace(

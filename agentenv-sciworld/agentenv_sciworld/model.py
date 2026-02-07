@@ -1,15 +1,14 @@
 from pydantic import BaseModel
-from typing import Optional
 
 
 class StepRequestBody(BaseModel):
-    id: int
+    env_id: int
     action: str
 
 
 class ResetRequestBody(BaseModel):
-    id: int
-    data_idx: int
+    env_id: int
+    task_id: int
 
 class CloseRequestBody(BaseModel):
-    id: int
+    env_id: int

@@ -22,7 +22,7 @@ class TextCraft_Wrapper:
             ob, _ = new_env.reset(data_idx=id)
             print(f"-------Env {id} created--------")
             self.ls.append(id)
-            payload = {"id": id, "observation": ob, "done": False, "reward": 0}
+            payload = {"env_id": id, "observation": ob, "done": False, "reward": 0}
             self.env[id] = new_env
             self.info[id] = {
                 "observation": ob,
@@ -48,7 +48,7 @@ class TextCraft_Wrapper:
         try:
             self._check_id(id)
             ob, _ = self.env[id].reset(data_idx=data_idx)
-            payload = {"id": id, "observation": ob, "done": False, "reward": 0}
+            payload = {"env_id": id, "observation": ob, "done": False, "reward": 0}
             self.info[id].update(
                 {"observation": ob, "done": False, "reward": 0, "deleted": False}
             )

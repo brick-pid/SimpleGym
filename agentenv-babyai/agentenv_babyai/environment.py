@@ -811,7 +811,7 @@ class BabyAIEnv:
                 self._max_id += 1
             self.info[idx] = {"deleted": False, "done": False}
             self.ls.append(idx)
-            return {"id": idx}
+            return {"env_id": idx}
         except Exception as e:
             return {"error": str(e)}
 
