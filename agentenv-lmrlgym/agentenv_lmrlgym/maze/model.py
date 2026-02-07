@@ -9,3 +9,7 @@ class MazeStepRequestBody(BaseModel):
 class MazeResetRequestBody(BaseModel):
     env_id: int
     task_id: int
+
+
+class MazeCloseRequestBody(BaseModel):
+    env_id: int

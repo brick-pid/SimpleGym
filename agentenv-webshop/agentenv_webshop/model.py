@@ -29,3 +29,7 @@ class StateResponse(BaseModel):
 class ResetQuery(BaseModel):
     env_id: int
     task_id: Optional[int] = None
+
+
+class CloseRequestBody(BaseModel):
+    env_id: int

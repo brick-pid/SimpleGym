@@ -9,3 +9,7 @@ class WordleStepRequestBody(BaseModel):
 class WordleResetRequestBody(BaseModel):
     env_id: int
     task_id: int
+
+
+class WordleCloseRequestBody(BaseModel):
+    env_id: int
