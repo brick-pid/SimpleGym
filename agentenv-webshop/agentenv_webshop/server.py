@@ -6,14 +6,14 @@ import logging
 import time
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
 
-from utils.error_utils import wrap_call
+from .utils import register_error_handlers
 from .environment import webshop_env_server
 from .model import *
 from .utils import debug_flg
 
 app = FastAPI(debug=debug_flg)
+register_error_handlers(app)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 
@@ -36,19 +36,13 @@ async def health():
 
 @app.post("/create")
 async def create():
-    env = wrap_call(webshop_env_server.create)
-    if isinstance(env, JSONResponse):
-        return env
-
+    env = webshop_env_server.create()
     return {"env_id": env}
 
 
 @app.post("/step")
 def step(step_query: StepQuery):
-    result = wrap_call(webshop_env_server.step, step_query.env_id, step_query.action)
-    if isinstance(result, JSONResponse):
-        return result
-    observation, reward, done, info = result
+    observation, reward, done, info = webshop_env_server.step(step_query.env_id, step_query.action)
     info = info or {}
     return {
         "observation": observation,
@@ -60,15 +54,17 @@ def step(step_query: StepQuery):
 
 @app.post("/reset")
 def reset(reset_query: ResetQuery):
-    result = wrap_call(webshop_env_server.reset, reset_query.env_id, reset_query.task_id)
-    if isinstance(result, JSONResponse):
-        return result
-    return {"observation": result, "info": {}}
+    result = webshop_env_server.reset(reset_query.env_id, reset_query.task_id)
+    # WebShop's env.reset() returns a tuple/list [observation, info]
+    # Extract the observation string to match other environments' format
+    if isinstance(result, (list, tuple)) and len(result) >= 1:
+        observation = result[0]
+    else:
+        observation = result
+    return {"observation": observation, "info": {}}
 
 
 @app.post("/close")
 def close(body: CloseRequestBody):
-    result = wrap_call(webshop_env_server.close, body.env_id)
-    if isinstance(result, JSONResponse):
-        return result
+    result = webshop_env_server.close(body.env_id)
     return {"closed": bool(result), "env_id": body.env_id}
