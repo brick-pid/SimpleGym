@@ -89,9 +89,12 @@ class ALFWorld_Wrapper:
 
     def step(self, idx: int, action: str):
         self._check_id(idx)
-        ob, _, done, info = self.env_init[idx].step([action])
+        with self._tw_lock:
+            ob, _, done, info = self.env_init[idx].step([action])
         ob, reward, done = process_ob(ob[0]), float(info["won"][0]), done[0]
         available_actions = info.get("admissible_commands", [[]])[0]
+        if ob == "Nothing happens.":
+            ob += f"Your action is not valid in current environment. Available action includes {available_actions}."
         payload = {
             "observation": ob,
             "reward": reward,
