@@ -2,7 +2,7 @@ import os
 import json
 import threading
 from .environment import SingleAlfredTWEnv
-from .utils import load_config, process_ob
+from .utils import load_config, process_ob, EnvNotFoundError, EnvClosedError, EpisodeFinishedError, TaskOutOfRangeError, InvalidActionError
 
 
 class ALFWorld_Wrapper:
@@ -25,7 +25,8 @@ class ALFWorld_Wrapper:
         self.env_init = {}  # dict[id, env_item]
         self.info = {}  # dict[id, env_info]
         self.games = []  # list[game_file]
-        self._lock = threading.Lock()
+        self._lock = threading.Lock()       # protects _max_id
+        self._tw_lock = threading.Lock()   # protects textworld parser (not thread-safe)
         
         train_games_root = os.path.join(
             os.environ["ALFWORLD_DATA"], "json_2.1.1", "train"
@@ -72,19 +73,14 @@ class ALFWorld_Wrapper:
                 )
 
     def create(self):
-        try:
-            # TODO extend to other kinds of environments
-            with self._lock:
-                idx = self._max_id
-                self._max_id += 1
-            self.env[idx] = SingleAlfredTWEnv(self.config)
-            self.info[idx] = {"done": False, "reward": 0, "deleted": False}
-            print(f"-------Env {idx} created--------")
-            self.ls.append(idx)
-            payload = {"env_id": idx}
-        except Exception as e:
-            payload = {"error": f"{e}"}
-        return payload
+        with self._lock:
+            idx = self._max_id
+            self._max_id += 1
+        self.env[idx] = SingleAlfredTWEnv(self.config)
+        self.info[idx] = {"done": False, "reward": 0, "deleted": False}
+        print(f"-------Env {idx} created--------")
+        self.ls.append(idx)
+        return {"env_id": idx}
     
     def __del__(self):
         for idx in self.ls:
@@ -92,83 +88,69 @@ class ALFWorld_Wrapper:
             print(f"-------Env {idx} closed--------")
 
     def step(self, idx: int, action: str):
-        try:
-            self._check_id(idx)
-            ob, _, done, info = self.env_init[idx].step([action])
-            ob, reward, done = process_ob(ob[0]), float(info["won"][0]), done[0]
-            available_actions = info.get("admissible_commands", [[]])[0]
-            payload = {
-                "observation": ob,
-                "reward": reward,
-                "available_actions": available_actions,
-                "done": done,
-            }
-            self.info[idx].update(payload)
-        except Exception as e:
-            print("Error id: ", idx)
-            payload = {"error": f"{e}"}
+        self._check_id(idx)
+        ob, _, done, info = self.env_init[idx].step([action])
+        ob, reward, done = process_ob(ob[0]), float(info["won"][0]), done[0]
+        available_actions = info.get("admissible_commands", [[]])[0]
+        payload = {
+            "observation": ob,
+            "reward": reward,
+            "available_actions": available_actions,
+            "done": done,
+        }
+        self.info[idx].update(payload)
         return payload
 
     def reset(self, idx: int, game: int, world_type: str):
         if world_type not in ["Text", "Embody", "Hybrid"]:
-            return {"error": 'world_type must be one of "Text", "Embody" and "Hybrid"'}
-        try:
-            self._check_id(idx, True)
-            self.env[idx].game_files = [self.games[game]]
-            self.env[idx].num_games = 1
+            raise InvalidActionError('world_type must be one of "Text", "Embody" and "Hybrid"')
+        if game < 0 or game >= len(self.games):
+            raise TaskOutOfRangeError(f"task_id {game} out of range [0, {len(self.games)})")
+        self._check_id(idx, True)
+        self.env[idx].game_files = [self.games[game]]
+        self.env[idx].num_games = 1
+        # textworld's tatsu parser is stateful and not thread-safe,
+        # so init_env + reset must be serialized.
+        with self._tw_lock:
             self.env_init[idx] = self.env[idx].init_env(batch_size=1)
             ob, info = self.env_init[idx].reset()
-            ob = "\n".join(ob[0].split("\n\n")[1:])
-            available_actions = info.get("admissible_commands", [[]])[0]
-            payload = {
-                "env_id": idx,
-                "observation": ob,
-                "available_actions": available_actions,
-                "task_type": "/".join(info["extra.gamefile"][0].split("/")[-3:-1]),
-            }
-            self.info[idx] = {
-                "world_type": world_type,
-                "game": game,
-                "observation": ob,
-                "available_actions": available_actions,
-                "done": False,
-                "reward": 0,
-                "deleted": False,
-            }
-        except Exception as e:
-            payload = {"error": str(e)}
-        return payload
+        ob = "\n".join(ob[0].split("\n\n")[1:])
+        available_actions = info.get("admissible_commands", [[]])[0]
+        self.info[idx] = {
+            "world_type": world_type,
+            "game": game,
+            "observation": ob,
+            "available_actions": available_actions,
+            "done": False,
+            "reward": 0,
+            "deleted": False,
+        }
+        return {
+            "env_id": idx,
+            "observation": ob,
+            "available_actions": available_actions,
+            "task_type": "/".join(info["extra.gamefile"][0].split("/")[-3:-1]),
+        }
 
     def get_observation(self, idx: int):
-        try:
-            self._check_id(idx)
-            return self.info[idx]["observation"]
-        except Exception as e:
-            return {"error": str(e)}
+        self._check_id(idx)
+        return self.info[idx]["observation"]
 
     def get_available_actions(self, idx: int):
-        try:
-            self._check_id(idx)
-            return self.info[idx]["available_actions"]
-        except Exception as e:
-            return {"error": str(e)}
+        self._check_id(idx)
+        return self.info[idx]["available_actions"]
 
     def get_detailed_info(self, idx: int):
-        try:
-            self._check_id(idx)
-            return self.info[idx]
-        except Exception as e:
-            return {"error": str(e)}
+        self._check_id(idx)
+        return self.info[idx]
 
     def _check_id(self, idx: int, is_reset: bool = False):
         if idx not in self.info:
-            raise NameError(f"The id {idx} is not valid.")
+            raise EnvNotFoundError(f"The id {idx} is not valid.")
         if self.info[idx]["deleted"]:
-            raise NameError(f"The task with environment {idx} has been deleted.")
+            raise EnvClosedError(f"The task with environment {idx} has been deleted.")
         if not is_reset and self.info[idx]["done"]:
-            print("is reset", is_reset)
-            print("done", self.info[idx]["done"])
-            raise NameError(f"The task with environment {idx} has finished.")
+            raise EpisodeFinishedError(f"The task with environment {idx} has finished.")
 
     def close(self, idx: int):
         self._check_id(idx, True)
