@@ -1,59 +1,69 @@
-from fastapi import FastAPI
+import logging
 import os
 
-from .utils import register_error_handlers
-from .model import *
-from .environment import server
+from fastapi import FastAPI
 
-app = FastAPI()
-register_error_handlers(app)
+from agentenv_pool import Router, create_app, StepRequestBody, CloseRequestBody
+from .environment import SciWorldWrapper
+from .model import ResetRequestBody
 
-VISUAL = os.environ.get("VISUAL", "false").lower() == "true"
-if VISUAL:
-    print("Running in VISUAL mode")
-    from fastapi.middleware.cors import CORSMiddleware
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(filename)s:%(lineno)d - %(message)s",
+)
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "service": "sciworld"}
+_parallel_actor = int(os.environ.get("SCIWORLD_PARALLEL_ACTOR", "8"))
+_ipc_timeout = float(os.environ.get("SCIWORLD_IPC_TIMEOUT", "120.0"))
 
 
-@app.post("/create")
-def create():
-    result = server.create()
-    return result
+def _make_wrapper():
+    return SciWorldWrapper()
 
 
-@app.post("/step")
-def step(body: StepRequestBody):
-    result = server.step(body.env_id, body.action)
-    if isinstance(result, dict) and "done" in result:
-        return {
-            "observation": result.get("observation"),
-            "reward": result.get("reward", 0),
-            "done": result.get("done", False),
-            "info": {k: v for k, v in result.items() if k not in {"observation", "reward", "done"}},
-        }
-    return result
+router = Router(
+    parallel_actor=_parallel_actor,
+    wrapper_factory=_make_wrapper,
+    ipc_timeout=_ipc_timeout,
+)
 
-@app.post("/reset")
-def reset(body: ResetRequestBody):
-    result = server.reset(body.env_id, body.task_id)
-    if isinstance(result, dict) and "observation" in result:
-        return {
-            "observation": result.get("observation"),
-            "info": {k: v for k, v in result.items() if k != "observation"},
-        }
-    return {"observation": result, "info": {}}
 
-@app.post("/close")
-def close(body: CloseRequestBody):
-    result = server.close(body.env_id)
-    return {"closed": bool(result), "env_id": body.env_id}
+def _register_routes(application: FastAPI, r: Router):
+    @application.post("/create")
+    async def create():
+        return await r.create()
+
+    @application.post("/step")
+    async def step(body: StepRequestBody):
+        result = await r.step(body.env_id, body.action)
+        if isinstance(result, dict) and "done" in result:
+            return {
+                "observation": result.get("observation"),
+                "reward": result.get("reward", 0),
+                "done": result.get("done", False),
+                "info": {
+                    k: v
+                    for k, v in result.items()
+                    if k not in {"observation", "reward", "done"}
+                },
+            }
+        return result
+
+    @application.post("/reset")
+    async def reset(body: ResetRequestBody):
+        result = await r.reset(body.env_id, data_idx=body.task_id)
+        if isinstance(result, dict) and "observation" in result:
+            return {
+                "observation": result.get("observation"),
+                "info": {
+                    k: v for k, v in result.items() if k != "observation"
+                },
+            }
+        return {"observation": result, "info": {}}
+
+    @application.post("/close")
+    async def close(body: CloseRequestBody):
+        result = await r.close(body.env_id)
+        return {"closed": bool(result), "env_id": body.env_id}
+
+
+app = create_app(router, extra_setup=_register_routes)

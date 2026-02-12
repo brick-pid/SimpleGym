@@ -2,15 +2,22 @@
 Entrypoint for the SciWorld agent environment.
 """
 
-import argparse
-import uvicorn
+import os
+
+from agentenv_pool import base_parser, run_server
 
 
 def launch():
-    """entrypoint for `sciworld` commond"""
+    """entrypoint for `sciworld` command"""
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--port", type=int, default=8000)
-    parser.add_argument("--host", type=str, default="0.0.0.0")
+    parser = base_parser(default_parallel_actor=8)
     args = parser.parse_args()
-    uvicorn.run("agentenv_sciworld:app", host=args.host, port=args.port)
+
+    os.environ["SCIWORLD_PARALLEL_ACTOR"] = str(args.parallel_actor)
+    os.environ["SCIWORLD_IPC_TIMEOUT"] = str(args.ipc_timeout)
+
+    run_server(
+        "agentenv_sciworld:app",
+        host=args.host,
+        port=args.port,
+    )
