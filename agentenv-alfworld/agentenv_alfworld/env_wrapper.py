@@ -95,8 +95,8 @@ class ALFWorld_Wrapper(BaseEnvWrapper):
         payload = {
             "observation": ob,
             "reward": reward,
-            "available_actions": available_actions,
             "done": done,
+            "info": {"available_actions": available_actions}
         }
         self.info[env_id].update(payload)
         return payload
@@ -123,10 +123,12 @@ class ALFWorld_Wrapper(BaseEnvWrapper):
             "deleted": False,
         }
         return {
-            "env_id": env_id,
             "observation": ob,
-            "available_actions": available_actions,
-            "task_type": "/".join(info["extra.gamefile"][0].split("/")[-3:-1]),
+            "info": {
+                "env_id": env_id,
+                "available_actions": available_actions,
+                "task_type": "/".join(info["extra.gamefile"][0].split("/")[-3:-1]),
+            }
         }
 
     def get_observation(self, env_id: int):
