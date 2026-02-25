@@ -40,8 +40,8 @@ def health():
     return {"status": "ok", "service": "searchqa"}
 
 @app.post("/create")
-def create(create_query: CreateQuery):
-    env = searchqa_env_server.create(create_query.task_id)
+def create():
+    env = searchqa_env_server.create()
     return {"env_id": env}
 
 @app.post("/step")

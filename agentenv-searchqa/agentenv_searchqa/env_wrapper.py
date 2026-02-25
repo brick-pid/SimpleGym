@@ -127,7 +127,7 @@ class SearchQAEnvServer:
         Perform a step in the environment with the given action.
         Input:
             env_idx: the index of the environment
-            action: a string in the format "<search> query </search>" or "<answer> answer </answer>"
+            action: a string in the format "search[xxx]" or "answer[xxx]"
         Output:
             observation: the observation after taking the action
             reward: the reward received after taking the action
@@ -142,7 +142,7 @@ class SearchQAEnvServer:
         observation = ""
 
         if isinstance(response, str):  # for llm output
-            pattern = r"<(search|answer)>(.*?)</\1>"
+            pattern = r"(search|answer)\[(.*?)\]"
             match = re.search(pattern, response, re.DOTALL)
             if match:
                 content = match.group(2).strip()
@@ -160,34 +160,29 @@ class SearchQAEnvServer:
             # search_results = ["pass"]
             observation = f"<information>{search_results.pop(0).strip()}</information>"
         elif action == "answer":
-            # Check if the answer is correct
-            format_score = compute_score_em_format(
-                response,
-                self.env[env_idx]["reward_model"]["ground_truth"],
-            )
-            # print(f"Format score: {score_format}")
             score = compute_score_em(
-                solution_str=response,
+                solution_str=content,
                 ground_truth=self.env[env_idx]["reward_model"]["ground_truth"],
-                format_score=format_score,
             )
-            # print(f"SubEM score: {score}")
+            logger.info(f"Answer: {content}, Ground Truth: {self.env[env_idx]['reward_model']['ground_truth']}, Score: {score}")
             reward = score
             if score == 1:
                 done = True
                 observation = (
                     "Congratulations! You have answered the question correctly."
                 )
+                logger.info(f"Env {env_idx} done with correct answer.")
             else:
                 observation = "Sorry, your answer is incorrect. Please try again."
         else:
-            observation = f"Your previous action is invalid. If you want to search, you should put the query between <search> and </search>. If you want to give the final answer, you should put the answer between <answer> and </answer>. Please try again."
+            observation = f"Your previous action is invalid. If you want to search, you should do <action>search[your query]</action>. If you want to give the final answer, you should do <action>answer[your answer]</action>. Please try again."
         return observation, reward, done, None
 
     def observation(self, env_idx):
         self._check_env_idx(env_idx)
         question = self.env[env_idx]["question"]
-        user_prompt = f"""You must reason inside <think>...</think> first. If you do not have enough knowledge, issue a <search>...</search> and then STOP. Do not generate <information> or <answer> yet. Wait for external input wrapped in <information>...</information>. After receiving information, reason again in <think>. If confident, output your final answer in <answer>...</answer>. Do not output <answer> before receiving <information> unless you are fully confident. If you find no further external knowledge needed, you can directly provide the answer inside <answer> and </answer>, without detailed illustrations. For example, <answer> Beijing </answer>. Follow this process every time.\n\n Question: {question.strip()}"""
+        # user_prompt = f"""You must reason inside <think>...</think> first. If you do not have enough knowledge, issue a <search>...</search> and then STOP. Do not generate <information> or <answer> yet. Wait for external input wrapped in <information>...</information>. After receiving information, reason again in <think>. If confident, output your final answer in <answer>...</answer>. Do not output <answer> before receiving <information> unless you are fully confident. If you find no further external knowledge needed, you can directly provide the answer inside <answer> and </answer>, without detailed illustrations. For example, <answer> Beijing </answer>. Follow this process every time.\n\n Question: {question.strip()}"""
+        user_prompt = f"""Question: {question.strip()}"""
         return user_prompt
 
     def reset(self, env_idx, task_id: Optional[int] = None):
@@ -205,7 +200,7 @@ class SearchQAEnvServer:
             combined.append({"document": doc, "score": score})
         resp.append(combined)
         result = [self._passages2string(r) for r in resp]
-        logger.info(f"Search results: {result}\nRAW: {resp}")
+        # logger.info(f"Search results: {result}\nRAW: {resp}")
         return result
 
     def _passages2string(self, retrieval_result):
